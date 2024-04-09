@@ -14,6 +14,7 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
     {
         Title = title,
         ClientSize = (width, height),
+        NumberOfSamples = 4,
         Vsync = VSyncMode.On
     })
 {
@@ -24,6 +25,10 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
     private int _vbo;
     private int _ebo;
     private int _texture;
+    
+    
+    private const int ScreenWidth = 1024;
+    private const int ScreenHeight = 1024;
     
     private readonly Stopwatch _stopwatch = new();
 
@@ -47,6 +52,8 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
         
         GlDebugger.Init();
         GL.ClearColor(Color.CornflowerBlue);
+        
+        GL.Enable(EnableCap.Multisample);
 
         _defaultShader = new Shader("Shaders/default.vert", "Shaders/default.frag");
 
@@ -78,7 +85,7 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
         GL.TextureParameter(_texture, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
         GL.TextureParameter(_texture, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
         GL.TextureParameter(_texture, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
-        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba32f, 512, 512, 0, PixelFormat.Rgba, PixelType.Float, 0);
+        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba32f, ScreenWidth, ScreenHeight, 0, PixelFormat.Rgba, PixelType.Float, 0);
         
         GL.BindImageTexture(0, _texture, 0, false, 0, TextureAccess.ReadOnly, SizedInternalFormat.Rgba32f);
     }
@@ -117,8 +124,8 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
         }
         
         _computeShader!.Use();
-        _computeShader.SetFloat("time", (float)_stopwatch.Elapsed.TotalMilliseconds);
-        GL.DispatchCompute(512, 512, 1);
+        _computeShader.SetFloat("time", (float)_stopwatch.Elapsed.TotalSeconds);
+        GL.DispatchCompute(ScreenWidth / 8, ScreenHeight / 4, 1);
         GL.MemoryBarrier(MemoryBarrierFlags.ShaderImageAccessBarrierBit);
 
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);

@@ -1,4 +1,5 @@
 ﻿using OpenTK.Graphics.OpenGL4;
+using OpenTK.Mathematics;
 
 namespace CommonRainFrog.Renderer;
 
@@ -79,5 +80,10 @@ public class Shader : IDisposable
     public void SetFloat(string location, float value)
     {
         GL.Uniform1(GL.GetUniformLocation(_handle, location), value);
+    }   
+    
+    public void SetVector2(string location, Vector2 vector2)
+    {
+        GL.Uniform2(GL.GetUniformLocation(_handle, location), vector2);
     }
 }
