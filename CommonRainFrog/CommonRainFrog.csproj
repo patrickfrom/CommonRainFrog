@@ -13,9 +13,6 @@
 
     <ItemGroup>
       <None Remove="Shaders\default.comp" />
-      <Content Include="Shaders\default.comp">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </Content>
       <None Update="Shaders\default.frag">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>

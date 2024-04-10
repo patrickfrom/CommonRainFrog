@@ -86,4 +86,16 @@ public class Shader : IDisposable
     {
         GL.Uniform2(GL.GetUniformLocation(_handle, location), vector2);
     }
+    
+    public static int ShaderDataTypeSize(ShaderDataType type)
+    {
+        return type switch
+        {
+            ShaderDataType.Float => 4,
+            ShaderDataType.Float2 => 4 * 2,
+            ShaderDataType.Float3 => 4 * 3,
+            ShaderDataType.Float4 => 4 * 4,
+            _ => 0
+        };
+    }
 }
