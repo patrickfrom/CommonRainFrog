@@ -116,6 +116,8 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
     {
         GL.Enable(EnableCap.CullFace);
         _cube!.Draw( Vector3.One, 0.5f, (float)_stopwatch.Elapsed.TotalSeconds);
+        _cube!.Draw( new Vector3(5.0f, 0.5f, 0.5f), new Vector4(1.0f, 0.25f, 0.25f, 1.0f), 0.5f, (float)_stopwatch.Elapsed.TotalSeconds);
+        
     }
 
     private void DisplayFps(double time)

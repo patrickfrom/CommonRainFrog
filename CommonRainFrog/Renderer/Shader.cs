@@ -92,6 +92,11 @@ public class Shader : IDisposable
         GL.Uniform3(GL.GetUniformLocation(_handle, location), data);
     }
 
+    public void SetVector4(string location, Vector4 data)
+    {
+        GL.Uniform4(GL.GetUniformLocation(_handle, location), data);
+    }
+
     public void SetMatrix4(string location, Matrix4 data)
     {
         GL.UniformMatrix4(GL.GetUniformLocation(_handle, location), false, ref data);
@@ -108,4 +113,5 @@ public class Shader : IDisposable
             _ => 0
         };
     }
+
 }
