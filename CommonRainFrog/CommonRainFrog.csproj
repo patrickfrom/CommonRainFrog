@@ -13,10 +13,16 @@
 
     <ItemGroup>
       <None Remove="Shaders\default.comp" />
-      <None Update="Shaders\default.frag">
+      <None Update="Shaders\quad.frag">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
-      <None Update="Shaders\default.vert">
+      <None Update="Shaders\quad.vert">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Shaders\cube.frag">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Shaders\cube.vert">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
     </ItemGroup>

@@ -1,9 +1,11 @@
 ﻿using OpenTK.Graphics.OpenGL4;
+using OpenTK.Mathematics;
 
-namespace CommonRainFrog.Renderer;
+namespace CommonRainFrog.Renderer.Meshes;
 
 public class Quad
 {
+    private readonly Shader _shader;
     private readonly VertexArray _vao;
     private readonly VertexBuffer<float> _vbo;
     private readonly IndexBuffer _ebo;
@@ -22,8 +24,10 @@ public class Quad
         2, 3, 0
     ];
 
-    public Quad()
+    public Quad(Shader shader)
     {
+        _shader = shader;
+        
         _vao = new VertexArray();
         _vao.Bind();
 
@@ -39,8 +43,12 @@ public class Quad
         _vao.AddVertexBuffer(ref _vbo);
     }
 
-    public void Draw()
+    public void Draw(Vector3 position, float scale = 1.0f, float angle = 0.0f)
     {
+        _shader.Use();
+        Matrix4 model = Matrix4.CreateRotationX(angle) * Matrix4.CreateRotationY(angle) * Matrix4.CreateTranslation(position) * Matrix4.CreateScale(scale);
+ 
+        _shader.SetMatrix4("model", model);
         _vao.Bind();
         GL.DrawElements(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedInt, 0);
     }
