@@ -75,7 +75,7 @@ public class Cube
         _vbo.SetLayout(new BufferLayout(new[]
         {
             new BufferElement(ShaderDataType.Float3, "aPosition"),
-            new BufferElement(ShaderDataType.Float3, "aNormals"),
+            new BufferElement(ShaderDataType.Float3, "aNormal"),
             new BufferElement(ShaderDataType.Float2, "aTexCoords"),
         }));
 
@@ -86,16 +86,16 @@ public class Cube
 
     public void Draw(Vector3 position, float scale = 1.0f, float angle = 0.0f)
     {
-        Draw(position, new Vector4(1.0f), scale, angle);
+        Draw(position, new Vector3(1.0f), scale, angle);
     }
 
-    public void Draw(Vector3 position, Vector4 color, float scale = 1.0f, float angle = 0.0f)
+    public void Draw(Vector3 position, Vector3 color, float scale = 1.0f, float angle = 0.0f)
     {
         _shader.Use();
         Matrix4 model = Matrix4.CreateRotationX(angle) * Matrix4.CreateRotationY(angle) * Matrix4.CreateTranslation(position) * Matrix4.CreateScale(scale);
 
         _shader.SetMatrix4("model", model);
-        _shader.SetVector4("color", color);
+        _shader.SetVector3("albedo", color);
         _vao.Bind();
         GL.DrawElements(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedInt, 0);
     }
