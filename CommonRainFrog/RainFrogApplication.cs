@@ -60,12 +60,15 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
 
     private readonly Stopwatch _stopwatch = new();
 
+    private int _postprocessFramebuffer;
+    private int _postprocessRenderbuffer;
+    private int _postprocessTexture;
+
     protected override void OnLoad()
     {
         _stopwatch.Start();
 
         GlDebugger.Init();
-        GL.ClearColor(Color.Coral);
 
         GL.Enable(EnableCap.DepthTest);
         GL.Enable(EnableCap.Multisample);
@@ -106,6 +109,27 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
         _texturedAluminumRoughnessMap = new Texture2D("Assets/Textures/TexturedAluminum/Roughness.png");
         _texturedAluminumNormalMap = new Texture2D("Assets/Textures/TexturedAluminum/Normal.png");
 
+        _postprocessFramebuffer = GL.GenFramebuffer();
+        GL.BindFramebuffer(FramebufferTarget.Framebuffer, _postprocessFramebuffer);
+
+        _postprocessTexture = GL.GenTexture();
+        GL.BindTexture(TextureTarget.Texture2D, _postprocessTexture);
+        
+        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, ClientSize.X, ClientSize.Y, 0, PixelFormat.Rgb, PixelType.UnsignedByte, 0);
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+        
+        GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, _postprocessTexture, 0);
+
+        _postprocessRenderbuffer = GL.GenRenderbuffer();
+        GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, _postprocessRenderbuffer);
+        GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, RenderbufferStorage.Depth24Stencil8, ClientSize.X, ClientSize.Y);
+        
+        GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, RenderbufferTarget.Renderbuffer, _postprocessRenderbuffer);
+        
+        GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, 0);
+        GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+        
         SetupUniformBufferObject();
     }
 
@@ -113,11 +137,21 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
     {
         GL.DeleteBuffer(_uboMatrices);
         
+        GL.DeleteFramebuffer(_postprocessFramebuffer);
+        GL.DeleteRenderbuffer(_postprocessRenderbuffer);
+        GL.DeleteTexture(_postprocessTexture);
+        
         _stackedStoneAlbedoMap!.Dispose();
         _stackedStoneAmbientOcclusionMap!.Dispose();
         _stackedStoneMetallicMap!.Dispose();
         _stackedStoneRoughnessMap!.Dispose();
         _stackedStoneNormalMap!.Dispose();
+        
+        _texturedAluminumNormalMap!.Dispose();
+        _texturedAluminumAmbientOcclusionMap!.Dispose();
+        _texturedAluminumMetallicMap!.Dispose();
+        _texturedAluminumRoughnessMap!.Dispose();
+        _texturedAluminumNormalMap!.Dispose();
 
         _quad!.Dispose();
         _cube!.Dispose();
@@ -148,12 +182,22 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
     {
         DisplayFps(e.Time);
 
-        GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
         FillUniformBufferObject();
-
+        
+        GL.BindFramebuffer(FramebufferTarget.Framebuffer, _postprocessFramebuffer);
+        GL.Enable(EnableCap.DepthTest);
+        GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
         Render2DScene();
         RenderSkybox();
         Render3DScene();
+        
+        GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+        GL.Disable(EnableCap.DepthTest);
+        GL.Clear(ClearBufferMask.ColorBufferBit);
+        _quadShader!.Use();
+        GL.ActiveTexture(TextureUnit.Texture0);
+        GL.BindTexture(TextureTarget.Texture2D, _postprocessTexture);
+        _quad!.Draw();
 
         SwapBuffers();
     }
@@ -166,7 +210,6 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
     private void Render2DScene()
     {
         GL.Disable(EnableCap.CullFace);
-        _quad!.Draw(Vector3.Zero, 0.5f);
     }
 
     private void RenderSkybox()
@@ -198,7 +241,7 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
         _texturedAluminumNormalMap!.Bind(4);
         RenderSphere(new Vector3(0.0f, -3.0f, 0.0f), new Vector3(1.0f, 0.0f, 0.5f));
         
-        _cube!.Draw(Vector3.One, new Vector3(0.0f, 0.0f, 0.0f), 0.5f);
+        _cube!.Draw(Vector3.One, new Vector3(0.0f, 0.0f, 0.0f), 0.5f, (float)_stopwatch.Elapsed.TotalSeconds);
         _cube!.Draw(new Vector3(5.0f, 0.5f, 0.5f), new Vector3(0.0f, 1.0f, 0.0f), 0.5f);
         _cube!.Draw(new Vector3(0.0f, 2.0f, 0.5f), new Vector3(0.0f, 0.0f, 1.0f), 0.5f);
     }
@@ -266,13 +309,13 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
                 {
                     float xSegment = x / (float)xSegments;
                     float ySegment = y / (float)ySegments;
-                    float xPos = MathF.Cos(xSegment * 2.0f * MathF.PI) * MathF.Sin(ySegment * MathF.PI);
-                    float yPos = MathF.Cos(ySegment * MathF.PI);
-                    float zPos = MathF.Sin(xSegment * 2.0f * MathF.PI) * MathF.Sin(ySegment * MathF.PI);
+                    float xPosition = MathF.Cos(xSegment * 2.0f * MathF.PI) * MathF.Sin(ySegment * MathF.PI);
+                    float yPosition = MathF.Cos(ySegment * MathF.PI);
+                    float zPosition = MathF.Sin(xSegment * 2.0f * MathF.PI) * MathF.Sin(ySegment * MathF.PI);
                     
-                    positions.Add(new Vector3(xPos, yPos, zPos));
+                    positions.Add(new Vector3(xPosition, yPosition, zPosition));
                     uv.Add(new Vector2(xSegment, ySegment));
-                    normals.Add(new Vector3(xPos, yPos, zPos));
+                    normals.Add(new Vector3(xPosition, yPosition, zPosition));
                 }
             }
 

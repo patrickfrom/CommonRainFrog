@@ -43,12 +43,9 @@ public class Quad
         _vao.AddVertexBuffer(ref _vbo);
     }
 
-    public void Draw(Vector3 position, float scale = 1.0f, float angle = 0.0f)
+    public void Draw()
     {
         _shader.Use();
-        Matrix4 model = Matrix4.CreateRotationX(angle) * Matrix4.CreateRotationY(angle) * Matrix4.CreateTranslation(position) * Matrix4.CreateScale(scale);
- 
-        _shader.SetMatrix4("model", model);
         _vao.Bind();
         GL.DrawElements(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedInt, 0);
     }
