@@ -109,6 +109,19 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
         _texturedAluminumRoughnessMap = new Texture2D("Assets/Textures/TexturedAluminum/Roughness.png");
         _texturedAluminumNormalMap = new Texture2D("Assets/Textures/TexturedAluminum/Normal.png");
 
+        CreatePostprocessFramebuffer();
+        
+        SetupUniformBufferObject();
+    }
+
+    private void CreatePostprocessFramebuffer()
+    {
+        if (_postprocessFramebuffer != 0)
+        {
+            GL.DeleteFramebuffer(_postprocessFramebuffer);
+            GL.DeleteRenderbuffer(_postprocessRenderbuffer);
+            GL.DeleteTexture(_postprocessTexture);
+        }
         _postprocessFramebuffer = GL.GenFramebuffer();
         GL.BindFramebuffer(FramebufferTarget.Framebuffer, _postprocessFramebuffer);
 
@@ -129,8 +142,7 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
         
         GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, 0);
         GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
-        
-        SetupUniformBufferObject();
+        GL.BindTexture(TextureTarget.Texture2D, 0);
     }
 
     protected override void OnUnload()
@@ -205,6 +217,7 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
     protected override void OnResize(ResizeEventArgs e)
     {
         GL.Viewport(0, 0, ClientSize.X, ClientSize.Y);
+        CreatePostprocessFramebuffer();
     }
 
     private void Render2DScene()
