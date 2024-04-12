@@ -91,7 +91,6 @@ public class Cube
 
     public void Draw(Vector3 position, Vector3 color, float scale = 1.0f, float angle = 0.0f)
     {
-        _shader.Use();
         Matrix4 model = Matrix4.CreateRotationX(angle) * Matrix4.CreateRotationY(angle) * Matrix4.CreateTranslation(position) * Matrix4.CreateScale(scale);
 
         _shader.SetMatrix4("model", model);

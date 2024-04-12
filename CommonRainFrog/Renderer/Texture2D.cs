@@ -13,7 +13,7 @@ public class Texture2D
 
         GL.TextureParameter(_textureId, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
         GL.TextureParameter(_textureId, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
-        GL.TextureParameter(_textureId, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+        GL.TextureParameter(_textureId, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.LinearMipmapLinear);
         GL.TextureParameter(_textureId, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
 
         byte[] imageBuffer = File.ReadAllBytes(imagePath);
@@ -21,6 +21,7 @@ public class Texture2D
 
         GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, image.Width, image.Height, 0,
             PixelFormat.Rgba, PixelType.UnsignedByte, image.Data);
+        GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
         
         GL.BindTexture(TextureTarget.Texture2D, 0);
     }

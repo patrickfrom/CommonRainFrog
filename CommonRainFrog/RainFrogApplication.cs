@@ -389,8 +389,7 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
             GL.EnableVertexAttribArray(2);
             GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, stride, 6 * sizeof(float));
         }
-
-        _pbrShader!.Use();
+        
         Matrix4 model = Matrix4.CreateTranslation(position) * Matrix4.CreateScale(scale);
 
         _pbrShader.SetMatrix4("model", model);
