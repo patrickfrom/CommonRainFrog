@@ -38,7 +38,13 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
     private Texture2D? _stackedStoneAmbientOcclusionMap;
     private Texture2D? _stackedStoneMetallicMap;
     private Texture2D? _stackedStoneRoughnessMap;
-    private Texture2D? _stackedStoneNormalMap;
+    private Texture2D? _stackedStoneNormalMap;  
+    
+    private Texture2D? _texturedAluminumAlbedoMap;
+    private Texture2D? _texturedAluminumAmbientOcclusionMap;
+    private Texture2D? _texturedAluminumMetallicMap;
+    private Texture2D? _texturedAluminumRoughnessMap;
+    private Texture2D? _texturedAluminumNormalMap;
 
     private static readonly string[] CalmSkyboxImagePaths =
     [
@@ -93,6 +99,12 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
         _stackedStoneMetallicMap = new Texture2D("Assets/Textures/StackedStone/Metallic.png");
         _stackedStoneRoughnessMap = new Texture2D("Assets/Textures/StackedStone/Roughness.png");
         _stackedStoneNormalMap = new Texture2D("Assets/Textures/StackedStone/Normal.png");
+        
+        _texturedAluminumAlbedoMap = new Texture2D("Assets/Textures/TexturedAluminum/Albedo.png");
+        _texturedAluminumAmbientOcclusionMap = new Texture2D("Assets/Textures/TexturedAluminum/AmbientOcclusion.png");
+        _texturedAluminumMetallicMap = new Texture2D("Assets/Textures/TexturedAluminum/Metallic.png");
+        _texturedAluminumRoughnessMap = new Texture2D("Assets/Textures/TexturedAluminum/Roughness.png");
+        _texturedAluminumNormalMap = new Texture2D("Assets/Textures/TexturedAluminum/Normal.png");
 
         SetupUniformBufferObject();
     }
@@ -171,7 +183,20 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
         GL.Enable(EnableCap.CullFace);
         _pbrShader!.Use();
         _pbrShader.SetVector3("cameraPosition", _camera!.Position);
+        
+        _stackedStoneAlbedoMap!.Bind();
+        _stackedStoneAmbientOcclusionMap!.Bind(1);
+        _stackedStoneMetallicMap!.Bind(2);
+        _stackedStoneRoughnessMap!.Bind(3);
+        _stackedStoneNormalMap!.Bind(4);
         RenderSphere(new Vector3(0.0f, 3.0f, 0.0f), new Vector3(1.0f, 0.0f, 0.5f));
+        
+        _texturedAluminumAlbedoMap!.Bind();
+        _texturedAluminumAmbientOcclusionMap!.Bind(1);
+        _texturedAluminumMetallicMap!.Bind(2);
+        _texturedAluminumRoughnessMap!.Bind(3);
+        _texturedAluminumNormalMap!.Bind(4);
+        RenderSphere(new Vector3(0.0f, -3.0f, 0.0f), new Vector3(1.0f, 0.0f, 0.5f));
         
         _cube!.Draw(Vector3.One, new Vector3(0.0f, 0.0f, 0.0f), 0.5f);
         _cube!.Draw(new Vector3(5.0f, 0.5f, 0.5f), new Vector3(0.0f, 1.0f, 0.0f), 0.5f);
@@ -313,12 +338,6 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
         Matrix4 model = Matrix4.CreateTranslation(position) * Matrix4.CreateScale(scale);
 
         _pbrShader.SetMatrix4("model", model);
-        
-        _stackedStoneAlbedoMap!.Bind();
-        _stackedStoneAmbientOcclusionMap!.Bind(1);
-        _stackedStoneMetallicMap!.Bind(2);
-        _stackedStoneRoughnessMap!.Bind(3);
-        _stackedStoneNormalMap!.Bind(4);
         
         GL.BindVertexArray(_sphereVao);
         GL.DrawElements(BeginMode.TriangleStrip, _indexCount, DrawElementsType.UnsignedInt, 0);
