@@ -4,8 +4,11 @@
 <details>
 <summary>Lighting</summary>
 
+### PBR Texture
+![PBR Texture](Extra/StackedStone.png)
+
 ### My first attempt at PBR
-![Hypnotized](Extra/PBR.png)
+![PBR First Attempt](Extra/PBR.png)
 
 </details>
 

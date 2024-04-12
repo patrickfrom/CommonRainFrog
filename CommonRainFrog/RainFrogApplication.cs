@@ -26,13 +26,19 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
     private Camera? _camera;
 
     private Shader? _quadShader;
-    private Shader? _cubeShader;
+    private Shader? _pbrShader;
     private Shader? _skyboxShader;
 
     private Quad? _quad;
     private Cube? _cube;
 
     private Skybox? _skybox;
+
+    private Texture2D? _stackedStoneAlbedoMap;
+    private Texture2D? _stackedStoneAmbientOcclusionMap;
+    private Texture2D? _stackedStoneMetallicMap;
+    private Texture2D? _stackedStoneRoughnessMap;
+    private Texture2D? _stackedStoneNormalMap;
 
     private static readonly string[] CalmSkyboxImagePaths =
     [
@@ -66,14 +72,27 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
 
 
         _quadShader = new Shader("Assets/Shaders/quad.vert", "Assets/Shaders/quad.frag");
-        _cubeShader = new Shader("Assets/Shaders/cube.vert", "Assets/Shaders/cube.frag");
-
+        
+        _pbrShader = new Shader("Assets/Shaders/pbr.vert", "Assets/Shaders/pbr.frag");
+        _pbrShader.Use();
+        _pbrShader.SetInt("albedoMap", 0);
+        _pbrShader.SetInt("ambientOcclusionMap", 1);
+        _pbrShader.SetInt("metallicMap", 2);
+        _pbrShader.SetInt("roughnessMap", 3);
+        _pbrShader.SetInt("normalMap", 4);
+        
         _quad = new Quad(_quadShader);
-        _cube = new Cube(_cubeShader);
+        _cube = new Cube(_pbrShader);
 
         _skyboxShader = new Shader("Assets/Shaders/skybox.vert", "Assets/Shaders/skybox.frag");
         _skybox = new Skybox(_skyboxShader);
         _skybox.SetTexture(CalmSkyboxImagePaths);
+
+        _stackedStoneAlbedoMap = new Texture2D("Assets/Textures/StackedStone/Albedo.png");
+        _stackedStoneAmbientOcclusionMap = new Texture2D("Assets/Textures/StackedStone/AmbientOcclusion.png");
+        _stackedStoneMetallicMap = new Texture2D("Assets/Textures/StackedStone/Metallic.png");
+        _stackedStoneRoughnessMap = new Texture2D("Assets/Textures/StackedStone/Roughness.png");
+        _stackedStoneNormalMap = new Texture2D("Assets/Textures/StackedStone/Normal.png");
 
         SetupUniformBufferObject();
     }
@@ -81,13 +100,19 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
     protected override void OnUnload()
     {
         GL.DeleteBuffer(_uboMatrices);
+        
+        _stackedStoneAlbedoMap!.Dispose();
+        _stackedStoneAmbientOcclusionMap!.Dispose();
+        _stackedStoneMetallicMap!.Dispose();
+        _stackedStoneRoughnessMap!.Dispose();
+        _stackedStoneNormalMap!.Dispose();
 
         _quad!.Dispose();
         _cube!.Dispose();
         _skybox!.Dispose();
 
         _quadShader!.Dispose();
-        _cubeShader!.Dispose();
+        _pbrShader!.Dispose();
         _skyboxShader!.Dispose();
     }
 
@@ -144,9 +169,10 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
     private void Render3DScene()
     {
         GL.Enable(EnableCap.CullFace);
-        _cubeShader!.Use();
-        _cubeShader.SetVector3("cameraPosition", _camera!.Position);
-        RenderSphere(new Vector3(0.0f, 6.0f, 0.0f), new Vector3(1.0f, 0.0f, 0.5f));
+        _pbrShader!.Use();
+        _pbrShader.SetVector3("cameraPosition", _camera!.Position);
+        RenderSphere(new Vector3(0.0f, 3.0f, 0.0f), new Vector3(1.0f, 0.0f, 0.5f));
+        
         _cube!.Draw(Vector3.One, new Vector3(0.0f, 0.0f, 0.0f), 0.5f);
         _cube!.Draw(new Vector3(5.0f, 0.5f, 0.5f), new Vector3(0.0f, 1.0f, 0.0f), 0.5f);
         _cube!.Draw(new Vector3(0.0f, 2.0f, 0.5f), new Vector3(0.0f, 0.0f, 1.0f), 0.5f);
@@ -189,7 +215,7 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
     private int _sphereVbo;
     private int _sphereEbo;
 
-    private int indexCount;
+    private int _indexCount;
 
     private void RenderSphere(Vector3 position, Vector3 color, float scale = 1.0f)
     {
@@ -248,7 +274,7 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
                 oddRow = !oddRow;
             }
 
-            indexCount = indices.Count;
+            _indexCount = indices.Count;
 
             List<float> data = [];
             for (int i = 0; i < positions.Count; i++)
@@ -283,12 +309,18 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
             GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, stride, 6 * sizeof(float));  
         }
         
-        _cubeShader!.Use();
+        _pbrShader!.Use();
         Matrix4 model = Matrix4.CreateTranslation(position) * Matrix4.CreateScale(scale);
 
-        _cubeShader.SetMatrix4("model", model);
-        _cubeShader.SetVector3("albedo", color);
+        _pbrShader.SetMatrix4("model", model);
+        
+        _stackedStoneAlbedoMap!.Bind();
+        _stackedStoneAmbientOcclusionMap!.Bind(1);
+        _stackedStoneMetallicMap!.Bind(2);
+        _stackedStoneRoughnessMap!.Bind(3);
+        _stackedStoneNormalMap!.Bind(4);
+        
         GL.BindVertexArray(_sphereVao);
-        GL.DrawElements(BeginMode.TriangleStrip, indexCount, DrawElementsType.UnsignedInt, 0);
+        GL.DrawElements(BeginMode.TriangleStrip, _indexCount, DrawElementsType.UnsignedInt, 0);
     }
 }
