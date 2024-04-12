@@ -77,6 +77,7 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
 
         _camera = new Camera(Vector3.UnitZ * 3, ClientSize.X / (float)ClientSize.Y, KeyboardState,
             MouseState);
+
         CursorState = CursorState.Grabbed;
 
 
@@ -123,7 +124,8 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
         GL.BindTexture(TextureTarget.Texture2D, _postprocessTexture);
 
         GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, ClientSize.X, ClientSize.Y, 0,
-            PixelFormat.Rgb, PixelType.UnsignedByte, 0);
+            PixelFormat.Rgb, PixelType.UnsignedByte, IntPtr.Zero);
+
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
 
@@ -138,10 +140,10 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
         GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment,
             RenderbufferTarget.Renderbuffer, _postprocessRenderbuffer);
 
-        GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, 0);
+        if (GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer) != FramebufferErrorCode.FramebufferComplete)
+            throw new Exception("ERROR::FRAMEBUFFER:: Framebuffer is not complete!");
 
-        GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
-        GL.BindTexture(TextureTarget.Texture2D, 0);
+        GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, 0);
     }
 
     protected override void OnUnload()
@@ -188,14 +190,18 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
             _camera!.Update(e.Time);
     }
 
-
     protected override void OnRenderFrame(FrameEventArgs e)
     {
+        if (ClientSize == Vector2i.Zero)
+            return;
+
         DisplayFps(e.Time);
 
         FillUniformBufferObject();
 
+
         GL.BindFramebuffer(FramebufferTarget.Framebuffer, _postprocessFramebuffer);
+
         GL.Enable(EnableCap.DepthTest);
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
         Render2DScene();
@@ -215,10 +221,18 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
 
     protected override void OnResize(ResizeEventArgs e)
     {
-        Console.WriteLine("aa");
+        GL.BindTexture(TextureTarget.Texture2D, _postprocessTexture);
+        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, ClientSize.X, ClientSize.Y, 0,
+            PixelFormat.Rgb, PixelType.UnsignedByte, IntPtr.Zero);
+
+        GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, _postprocessRenderbuffer);
+        GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, RenderbufferStorage.Depth24Stencil8, ClientSize.X,
+            ClientSize.Y);
+
+
         GL.Viewport(0, 0, ClientSize.X, ClientSize.Y);
     }
-    
+
     private void Render2DScene()
     {
         GL.Disable(EnableCap.CullFace);
@@ -275,6 +289,7 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
         GL.BindBuffer(BufferTarget.UniformBuffer, _uboMatrices);
         GL.BufferData(BufferTarget.UniformBuffer, 2 * Unsafe.SizeOf<Matrix4>(), IntPtr.Zero,
             BufferUsageHint.StaticDraw);
+
         GL.BindBuffer(BufferTarget.UniformBuffer, 0);
 
         GL.BindBufferRange(BufferRangeTarget.UniformBuffer, 0, _uboMatrices, 0, 2 * Unsafe.SizeOf<Matrix4>());
@@ -332,6 +347,7 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
             }
 
             bool oddRow = false;
+
             for (int y = 0; y < ySegments; ++y)
             {
                 if (!oddRow)
@@ -357,11 +373,13 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
             _indexCount = indices.Count;
 
             List<float> data = [];
+
             for (int i = 0; i < positions.Count; i++)
             {
                 data.Add(positions[i].X);
                 data.Add(positions[i].Y);
                 data.Add(positions[i].Z);
+
                 if (normals.Count > 0)
                 {
                     data.Add(normals[i].X);
@@ -381,6 +399,7 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, _sphereEbo);
             GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Count * sizeof(int), indices.ToArray(),
                 BufferUsageHint.StaticDraw);
+
             const int stride = (3 + 2 + 3) * sizeof(float);
             GL.EnableVertexAttribArray(0);
             GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, stride, 0);
@@ -389,10 +408,10 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
             GL.EnableVertexAttribArray(2);
             GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, stride, 6 * sizeof(float));
         }
-        
+
         Matrix4 model = Matrix4.CreateTranslation(position) * Matrix4.CreateScale(scale);
 
-        _pbrShader.SetMatrix4("model", model);
+        _pbrShader!.SetMatrix4("model", model);
 
         GL.BindVertexArray(_sphereVao);
         GL.DrawElements(BeginMode.TriangleStrip, _indexCount, DrawElementsType.UnsignedInt, 0);
