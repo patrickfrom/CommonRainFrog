@@ -79,7 +79,7 @@ public class Cube
             new BufferElement(ShaderDataType.Float2, "aTexCoords"),
         }));
 
-        _ebo = new IndexBuffer(_indices, _indices.Length * sizeof(int));
+        _ebo = new IndexBuffer(_indices, _indices.Length);
 
         _vao.AddVertexBuffer(ref _vbo);
     }

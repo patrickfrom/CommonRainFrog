@@ -78,7 +78,7 @@ public class Skybox
             new BufferElement(ShaderDataType.Float3, "aPosition"),
         }));
 
-        _ebo = new IndexBuffer(_indices, _indices.Length * sizeof(int));
+        _ebo = new IndexBuffer(_indices, _indices.Length);
 
         _vao.AddVertexBuffer(ref _vbo);
     }
