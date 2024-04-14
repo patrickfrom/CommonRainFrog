@@ -27,6 +27,7 @@ float DistributionGGX(vec3 N, vec3 H, float roughness);
 float GeometrySchlickGGX(float NdotV, float roughness);
 float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness);
 vec3 fresnelSchlick(float cosTheta, vec3 F0);
+vec3 CalculateDirectionalLight(vec3 V, vec3 N, vec3 albedo, float metallic, float roughness, vec3 F0);
 
 vec3 getNormalFromMap();
 
@@ -65,7 +66,9 @@ void main() {
         float NdotL = max(dot(N, L), 0.0);
         Lo += (kD * albedo / PI + specular) * radiance * NdotL;
     }
-
+    
+    Lo += CalculateDirectionalLight(V, N, albedo, metallic, roughness, F0);
+    
     vec3 ambient = vec3(0.03) * albedo * ao;
     vec3 color = ambient * Lo;
 
@@ -128,4 +131,27 @@ vec3 getNormalFromMap()
     mat3 TBN = mat3(T, B, N);
 
     return normalize(TBN * tangentNormal);
+}
+
+vec3 CalculateDirectionalLight(vec3 V, vec3 N, vec3 albedo, float metallic, float roughness, vec3 F0) {
+    vec3 L = normalize(-vec3(0.2, -1.0, 0.4));
+    vec3 H = normalize(V + L);
+
+    vec3 radiance = vec3(600.0);
+
+    float NDF = DistributionGGX(N, H, roughness);
+    float G = GeometrySmith(N, V, L, roughness);
+    vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
+
+    vec3 kS = F;
+    vec3 kD = vec3(1.0) - kS;
+    kD *= 1.0 - metallic;
+
+    vec3 numerator = NDF * G * F;
+    float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
+    vec3 specular = numerator / denominator;
+
+    float NdotL = max(dot(N, L), 0.0);
+
+    return (kD * albedo / PI + specular) * radiance * NdotL;
 }

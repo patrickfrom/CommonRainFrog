@@ -12,7 +12,7 @@ const float pixelHeight = 5.0;
 
 void main()
 {
-    vec3 tc = vec3(1.0, 0.0, 0.0);
+    /*ec3 tc = vec3(1.0, 0.0, 0.0);
     if (TexCoords.x < (2.0-0.005))
     {
         float dx = pixelWidth*(1./resolution.x);
@@ -25,7 +25,7 @@ void main()
     {
         tc = texture(screenTexture, TexCoords).rgb;
     }
-    FragColor = vec4(tc, 1.0);
+    FragColor = vec4(tc, 1.0);*/
     
-    //FragColor = texture(screenTexture, TexCoords);
+    FragColor = texture(screenTexture, TexCoords);
 }  

@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Drawing;
 using System.Runtime.CompilerServices;
 using CommonRainFrog.Renderer;
 using CommonRainFrog.Renderer.Meshes;
@@ -17,7 +16,7 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
     {
         Title = title,
         ClientSize = (width, height),
-        NumberOfSamples = 4
+        NumberOfSamples = 8
     })
 {
     private double _timeElapsed;
@@ -47,7 +46,7 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
     private Texture2D? _texturedAluminumRoughnessMap;
     private Texture2D? _texturedAluminumNormalMap;
 
-    private static readonly string[] CalmSkyboxImagePaths =
+    private readonly static string[] CalmSkyboxImagePaths =
     [
         "Assets/Skybox/Calm/px.png",
         "Assets/Skybox/Calm/nx.png",
