@@ -1,5 +1,4 @@
 ﻿using OpenTK.Graphics.OpenGL4;
-using OpenTK.Mathematics;
 
 namespace CommonRainFrog.Renderer.Meshes;
 
@@ -8,26 +7,19 @@ public class Quad
     private readonly Shader _shader;
     private readonly VertexArray _vao;
     private readonly VertexBuffer<float> _vbo;
-    private readonly IndexBuffer _ebo;
-    
+
     private readonly float[] _vertices =
     [
-        -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-        1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
         1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
-        -1.0f, 1.0f, 0.0f, 0.0f, 1.0f
-    ];
-
-    private readonly int[] _indices =
-    [
-        0, 1, 2,
-        2, 3, 0
+        -1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+        1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+        -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
     ];
 
     public Quad(Shader shader)
     {
         _shader = shader;
-        
+
         _vao = new VertexArray();
         _vao.Bind();
 
@@ -38,8 +30,6 @@ public class Quad
             new BufferElement(ShaderDataType.Float2, "aTexCoords"),
         }));
 
-        _ebo = new IndexBuffer(_indices, _indices.Length);
-        
         _vao.AddVertexBuffer(ref _vbo);
     }
 
@@ -47,13 +37,12 @@ public class Quad
     {
         _shader.Use();
         _vao.Bind();
-        GL.DrawElements(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedInt, 0);
+        GL.DrawArrays(PrimitiveType.TriangleStrip, 0, _vertices.Length);
     }
 
     public void Dispose()
     {
         _vao.Dispose();
         _vbo.Dispose();
-        _ebo.Dispose();
     }
 }
