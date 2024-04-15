@@ -29,6 +29,7 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
     private Shader? _skyboxShader;
 
     private Quad? _quad;
+    private Plane? _plane;
     private Cube? _cube;
     private Sphere? _sphere;
 
@@ -90,8 +91,10 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
         _pbrShader.SetInt("metallicMap", 2);
         _pbrShader.SetInt("roughnessMap", 3);
         _pbrShader.SetInt("normalMap", 4);
+        _pbrShader.SetInt("shadowMap", 5);
 
         _quad = new Quad(_quadShader);
+        _plane = new Plane(_pbrShader);
         _cube = new Cube(_pbrShader);
         _sphere = new Sphere(_pbrShader);
 
@@ -154,7 +157,7 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
         GL.DeleteFramebuffer(_postprocessFramebuffer);
         GL.DeleteRenderbuffer(_postprocessRenderbuffer);
         GL.DeleteTexture(_postprocessTexture);
-
+        
         _stackedStoneAlbedoMap!.Dispose();
         _stackedStoneAmbientOcclusionMap!.Dispose();
         _stackedStoneMetallicMap!.Dispose();
@@ -168,6 +171,7 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
         _texturedAluminumNormalMap!.Dispose();
 
         _quad!.Dispose();
+        _plane!.Dispose();
         _cube!.Dispose();
         _sphere!.Dispose();
         _skybox!.Dispose();
@@ -200,12 +204,13 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
         DisplayFps(e.Time);
 
         FillUniformBufferObject();
+        
 
 
         GL.BindFramebuffer(FramebufferTarget.Framebuffer, _postprocessFramebuffer);
-
         GL.Enable(EnableCap.DepthTest);
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+        
         Render2DScene();
         RenderSkybox();
         Render3DScene();
@@ -263,6 +268,8 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
         _stackedStoneRoughnessMap!.Bind(3);
         _stackedStoneNormalMap!.Bind(4);
         _sphere!.Draw(new Vector3(0.0f, 3.0f, 0.0f));
+        _plane!.Draw(new Vector3(0.0f, -1.5f, 0.0f), new Vector3(MathHelper.DegreesToRadians(-90.0f), 0.0f, 0.0f),
+            3.0f);
 
         _texturedAluminumAlbedoMap!.Bind();
         _texturedAluminumAmbientOcclusionMap!.Bind(1);
