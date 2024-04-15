@@ -61,9 +61,9 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
 
     private readonly Stopwatch _stopwatch = new();
 
-    private int _postprocessFramebuffer;
-    private int _postprocessRenderbuffer;
-    private int _postprocessTexture;
+
+    private Framebuffer _postprocessFramebuffer;
+    private Renderbuffer _postprocessRenderbuffer;
 
     protected override void OnLoad()
     {
@@ -114,50 +114,19 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
         _texturedAluminumRoughnessMap = new Texture2D("Assets/Textures/TexturedAluminum/Roughness.png");
         _texturedAluminumNormalMap = new Texture2D("Assets/Textures/TexturedAluminum/Normal.png");
 
-        CreatePostprocessFramebuffer();
+        _postprocessFramebuffer = new Framebuffer(ClientSize.X, ClientSize.Y);
+        _postprocessRenderbuffer = new Renderbuffer(ClientSize.X, ClientSize.Y);
 
         SetupUniformBufferObject();
-    }
-
-    private void CreatePostprocessFramebuffer()
-    {
-        _postprocessFramebuffer = GL.GenFramebuffer();
-        GL.BindFramebuffer(FramebufferTarget.Framebuffer, _postprocessFramebuffer);
-
-        _postprocessTexture = GL.GenTexture();
-        GL.BindTexture(TextureTarget.Texture2D, _postprocessTexture);
-
-        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, ClientSize.X, ClientSize.Y, 0,
-            PixelFormat.Rgb, PixelType.UnsignedByte, IntPtr.Zero);
-
-        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
-        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
-
-        GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0,
-            TextureTarget.Texture2D, _postprocessTexture, 0);
-
-        _postprocessRenderbuffer = GL.GenRenderbuffer();
-        GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, _postprocessRenderbuffer);
-        GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, RenderbufferStorage.Depth24Stencil8, ClientSize.X,
-            ClientSize.Y);
-
-        GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment,
-            RenderbufferTarget.Renderbuffer, _postprocessRenderbuffer);
-
-        if (GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer) != FramebufferErrorCode.FramebufferComplete)
-            throw new Exception("ERROR::FRAMEBUFFER:: Framebuffer is not complete!");
-
-        GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, 0);
     }
 
     protected override void OnUnload()
     {
         GL.DeleteBuffer(_uboMatrices);
 
-        GL.DeleteFramebuffer(_postprocessFramebuffer);
-        GL.DeleteRenderbuffer(_postprocessRenderbuffer);
-        GL.DeleteTexture(_postprocessTexture);
-        
+        _postprocessFramebuffer.Dispose();
+        _postprocessRenderbuffer.Dispose();
+
         _stackedStoneAlbedoMap!.Dispose();
         _stackedStoneAmbientOcclusionMap!.Dispose();
         _stackedStoneMetallicMap!.Dispose();
@@ -204,13 +173,12 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
         DisplayFps(e.Time);
 
         FillUniformBufferObject();
-        
 
 
-        GL.BindFramebuffer(FramebufferTarget.Framebuffer, _postprocessFramebuffer);
+        _postprocessFramebuffer.Bind();
         GL.Enable(EnableCap.DepthTest);
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-        
+
         Render2DScene();
         RenderSkybox();
         Render3DScene();
@@ -220,7 +188,7 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
         GL.Clear(ClearBufferMask.ColorBufferBit);
         _quadShader!.Use();
         GL.ActiveTexture(TextureUnit.Texture0);
-        GL.BindTexture(TextureTarget.Texture2D, _postprocessTexture);
+        GL.BindTexture(TextureTarget.Texture2D, _postprocessFramebuffer.TextureId);
         _quad!.Draw();
 
         SwapBuffers();
@@ -228,16 +196,8 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
 
     protected override void OnResize(ResizeEventArgs e)
     {
-        _quadShader!.Use();
-        _quadShader.SetVector2("resolution", ClientSize);
-        GL.BindTexture(TextureTarget.Texture2D, _postprocessTexture);
-        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, ClientSize.X, ClientSize.Y, 0,
-            PixelFormat.Rgb, PixelType.UnsignedByte, IntPtr.Zero);
-
-        GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, _postprocessRenderbuffer);
-        GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, RenderbufferStorage.Depth24Stencil8, ClientSize.X,
-            ClientSize.Y);
-
+        _postprocessFramebuffer.Resize(ClientSize.X, ClientSize.Y);
+        _postprocessRenderbuffer.Resize(ClientSize.X, ClientSize.Y);
 
         GL.Viewport(0, 0, ClientSize.X, ClientSize.Y);
     }

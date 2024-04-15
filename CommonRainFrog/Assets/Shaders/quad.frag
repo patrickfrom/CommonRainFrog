@@ -5,7 +5,6 @@ out vec4 FragColor;
 in vec2 TexCoords;
 
 uniform sampler2D screenTexture;
-uniform vec2 resolution;
 
 const float pixelWidth = 5.0; 
 const float pixelHeight = 5.0; 
