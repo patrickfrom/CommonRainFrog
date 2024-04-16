@@ -48,9 +48,9 @@ public class Plane
     {
         _shader.Use();
         _vao.Bind();
-        Matrix4 model = Matrix4.CreateScale(scale) *
-                        Matrix4.CreateRotationX(rotation.X) * Matrix4.CreateRotationY(rotation.Y) *
+        Matrix4 model = Matrix4.CreateRotationX(rotation.X) * Matrix4.CreateRotationY(rotation.Y) *
                         Matrix4.CreateRotationZ(rotation.Z) *
+                        Matrix4.CreateScale(scale) *
                         Matrix4.CreateTranslation(position);
         _shader.SetMatrix4("model", model);
         GL.DrawElements(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedInt, 0);

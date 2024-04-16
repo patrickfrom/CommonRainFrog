@@ -103,7 +103,7 @@ public class Sphere
 
     public void Draw(Vector3 position, float scale = 1.0f)
     {
-        Matrix4 model = Matrix4.CreateTranslation(position) * Matrix4.CreateScale(scale);
+        Matrix4 model = Matrix4.CreateScale(scale) * Matrix4.CreateTranslation(position) ;
 
         _shader.SetMatrix4("model", model);
 

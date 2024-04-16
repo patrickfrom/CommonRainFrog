@@ -116,6 +116,8 @@ public class Skybox
         GL.ActiveTexture(TextureUnit.Texture0);
         GL.BindTexture(TextureTarget.TextureCubeMap, _textureId);
         GL.DrawElements(PrimitiveType.Triangles, _indices.Length, DrawElementsType.UnsignedInt, 0);
+        
+        GL.BindTexture(TextureTarget.TextureCubeMap, 0);
     }
 
     public void Dispose()

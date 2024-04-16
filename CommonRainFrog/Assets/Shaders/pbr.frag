@@ -12,16 +12,15 @@ uniform sampler2D metallicMap;
 uniform sampler2D roughnessMap;
 uniform sampler2D normalMap;
 
+uniform vec3 albedoColor;
+
 uniform vec3 cameraPosition;
+uniform vec3 lightDirection;
 
 const float PI = 3.14159265359;
 
-const vec3 lightPositions[] = {
-    vec3(0.2, 1.0, 0.0),
-    vec3(0.4, -1.0, 0.0),
-    vec3(0.5, 1.0, 0.0),
-    vec3(0.8, 1.0, 0.0)
-};
+const int MAX_POINT_LIGHTS = 2;
+uniform vec3 pointLights[MAX_POINT_LIGHTS];
 
 float DistributionGGX(vec3 N, vec3 H, float roughness);
 float GeometrySchlickGGX(float NdotV, float roughness);
@@ -32,11 +31,11 @@ vec3 CalculateDirectionalLight(vec3 V, vec3 N, vec3 albedo, float metallic, floa
 vec3 getNormalFromMap();
 
 void main() {
-    vec3 albedo     = pow(texture(albedoMap, TexCoords).rgb, vec3(2.2));
+    vec3 albedo     = pow(texture(albedoMap, TexCoords).rgb, vec3(2.2)) + albedoColor;
     float metallic  = texture(metallicMap, TexCoords).r;
     float roughness = texture(roughnessMap, TexCoords).r;
     float ao        = texture(ambientOcclusionMap, TexCoords).r;
-    
+
     vec3 N = getNormalFromMap();
     vec3 V = normalize(cameraPosition - FragPos);
 
@@ -44,31 +43,33 @@ void main() {
     F0 = mix(F0, albedo, metallic);
 
     vec3 Lo = vec3(0.0);
-    for (int i = 0; i < 4; ++i) {
-        vec3 L = normalize(lightPositions[i] - FragPos);
-        vec3 H = normalize(V + L);
-        float distance = length(lightPositions[i] - FragPos);
-        float attenuation = 1.0 / (distance * distance);
-        vec3 radiance = vec3(600.0) * attenuation;
+    for (int i = 0; i < MAX_POINT_LIGHTS; ++i) {
+        if (pointLights[i] != vec3(0.0)) {
+            vec3 L = normalize(pointLights[i] - FragPos);
+            vec3 H = normalize(V + L);
+            float distance = length(pointLights[i] - FragPos);
+            float attenuation = 1.0 / (distance * distance);
+            vec3 radiance = vec3(600.0) * attenuation;
 
-        float NDF = DistributionGGX(N, H, roughness);
-        float G = GeometrySmith(N, V, L, roughness);
-        vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
+            float NDF = DistributionGGX(N, H, roughness);
+            float G = GeometrySmith(N, V, L, roughness);
+            vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
 
-        vec3 kS = F;
-        vec3 kD = vec3(1.0) - kS;
-        kD *= 1.0 - metallic;
+            vec3 kS = F;
+            vec3 kD = vec3(1.0) - kS;
+            kD *= 1.0 - metallic;
 
-        vec3 numerator = NDF * G * F;
-        float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
-        vec3 specular = numerator / denominator;
+            vec3 numerator = NDF * G * F;
+            float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
+            vec3 specular = numerator / denominator;
 
-        float NdotL = max(dot(N, L), 0.0);
-        Lo += (kD * albedo / PI + specular) * radiance * NdotL;
+            float NdotL = max(dot(N, L), 0.0);
+            Lo += (kD * albedo / PI + specular) * radiance * NdotL;
+        }
     }
-    
+
     Lo += CalculateDirectionalLight(V, N, albedo, metallic, roughness, F0);
-    
+
     vec3 ambient = vec3(0.03) * albedo * ao;
     vec3 color = ambient * Lo;
 
@@ -134,7 +135,7 @@ vec3 getNormalFromMap()
 }
 
 vec3 CalculateDirectionalLight(vec3 V, vec3 N, vec3 albedo, float metallic, float roughness, vec3 F0) {
-    vec3 L = normalize(-vec3(0.2, -1.0, 0.4));
+    vec3 L = normalize(-lightDirection);
     vec3 H = normalize(V + L);
 
     vec3 radiance = vec3(600.0);
