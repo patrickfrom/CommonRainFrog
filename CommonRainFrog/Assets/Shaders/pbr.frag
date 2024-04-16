@@ -19,8 +19,9 @@ uniform vec3 lightDirection;
 
 const float PI = 3.14159265359;
 
-const int MAX_POINT_LIGHTS = 2;
-uniform vec3 pointLights[MAX_POINT_LIGHTS];
+#define MAX_LIGHTS 20
+uniform vec3 pointLights[MAX_LIGHTS];
+uniform vec3 pointLightsColor[MAX_LIGHTS];
 
 float DistributionGGX(vec3 N, vec3 H, float roughness);
 float GeometrySchlickGGX(float NdotV, float roughness);
@@ -43,31 +44,29 @@ void main() {
     F0 = mix(F0, albedo, metallic);
 
     vec3 Lo = vec3(0.0);
-    for (int i = 0; i < MAX_POINT_LIGHTS; ++i) {
-        if (pointLights[i] != vec3(0.0)) {
-            vec3 L = normalize(pointLights[i] - FragPos);
-            vec3 H = normalize(V + L);
-            float distance = length(pointLights[i] - FragPos);
-            float attenuation = 1.0 / (distance * distance);
-            vec3 radiance = vec3(600.0) * attenuation;
+    for (int i = 0; i < MAX_LIGHTS; ++i) {
+        vec3 L = normalize(pointLights[i] - FragPos);
+        vec3 H = normalize(V + L);
+        float distance = length(pointLights[i] - FragPos);
+        float attenuation = 1.0 / (distance * distance);
+        vec3 radiance = pointLightsColor[i] * attenuation;
 
-            float NDF = DistributionGGX(N, H, roughness);
-            float G = GeometrySmith(N, V, L, roughness);
-            vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
+        float NDF = DistributionGGX(N, H, roughness);
+        float G = GeometrySmith(N, V, L, roughness);
+        vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
 
-            vec3 kS = F;
-            vec3 kD = vec3(1.0) - kS;
-            kD *= 1.0 - metallic;
+        vec3 kS = F;
+        vec3 kD = vec3(1.0) - kS;
+        kD *= 1.0 - metallic;
 
-            vec3 numerator = NDF * G * F;
-            float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
-            vec3 specular = numerator / denominator;
+        vec3 numerator = NDF * G * F;
+        float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
+        vec3 specular = numerator / denominator;
 
-            float NdotL = max(dot(N, L), 0.0);
-            Lo += (kD * albedo / PI + specular) * radiance * NdotL;
-        }
+        float NdotL = max(dot(N, L), 0.0);
+        Lo += (kD * albedo / PI + specular) * radiance * NdotL;
     }
-
+    
     Lo += CalculateDirectionalLight(V, N, albedo, metallic, roughness, F0);
 
     vec3 ambient = vec3(0.03) * albedo * ao;
