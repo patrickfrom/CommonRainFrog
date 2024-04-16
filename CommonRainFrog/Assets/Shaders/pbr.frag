@@ -6,11 +6,11 @@ in vec2 TexCoords;
 in vec3 Normal;
 in vec3 FragPos;
 
-uniform sampler2D albedoMap;
-uniform sampler2D ambientOcclusionMap;
-uniform sampler2D metallicMap;
-uniform sampler2D roughnessMap;
-uniform sampler2D normalMap;
+layout (binding = 0) uniform sampler2D albedoMap;
+layout (binding = 1) uniform sampler2D ambientOcclusionMap;
+layout (binding = 2) uniform sampler2D metallicMap;
+layout (binding = 3) uniform sampler2D roughnessMap;
+layout (binding = 4) uniform sampler2D normalMap;
 
 uniform vec3 albedoColor;
 

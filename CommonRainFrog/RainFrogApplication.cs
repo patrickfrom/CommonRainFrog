@@ -70,8 +70,9 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
     private Renderbuffer _postprocessRenderbuffer;
 
     private Vector3 _lightDirection = new(2.0f, -1.0f, 0.5f);
-    
-    private PointLight[] _pointLights = [
+
+    private PointLight[] _pointLights =
+    [
         new PointLight(new Vector3(0.0f, -1.0f, 0.0f), new Vector3(600.0f))
     ];
 
@@ -97,12 +98,6 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
         _pbrShader = new Shader("Assets/Shaders/pbr.vert", "Assets/Shaders/pbr.frag");
         _pbrShader.Use();
         _pbrShader.SetVector3("lightDirection", _lightDirection);
-        _pbrShader.SetInt("albedoMap", 0);
-        _pbrShader.SetInt("ambientOcclusionMap", 1);
-        _pbrShader.SetInt("metallicMap", 2);
-        _pbrShader.SetInt("roughnessMap", 3);
-        _pbrShader.SetInt("normalMap", 4);
-        _pbrShader.SetInt("shadowMap", 5);
         _pbrShader.SetInt("irradianceMap", 6);
 
         SetupImageBasedLighting();
@@ -143,17 +138,9 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
     {
         _equirectangularToCubemapShader = new Shader("Assets/Shaders/IBL/cubemap.vert",
             "Assets/Shaders/IBL/equirectangularToCubemap.frag");
-        _equirectangularToCubemapShader.Use();
-        _equirectangularToCubemapShader.SetInt("equirectangularMap", 0);
-
         _irradianceShader =
             new Shader("Assets/Shaders/IBL/cubemap.vert", "Assets/Shaders/IBL/irradianceConvolution.frag");
-        _irradianceShader.Use();
-        _irradianceShader.SetInt("environmentMap", 0);
-
         _backgroundShader = new Shader("Assets/Shaders/IBL/background.vert", "Assets/Shaders/IBL/background.frag");
-        _backgroundShader.Use();
-        _backgroundShader.SetInt("environmentMap", 0);
     }
 
     protected override void OnUnload()
@@ -211,25 +198,24 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
             Quaternion rotation = Quaternion.FromAxisAngle(-Vector3.UnitY, 10.0f * (float)e.Time);
             _lightDirection = Vector3.Transform(_lightDirection, rotation);
         }
-        
+
         if (KeyboardState.IsKeyDown(Keys.I))
-            _pointLights[0].Position += Vector3.UnitY * 2.0f * (float)e.Time;        
-        
+            _pointLights[0].Position += Vector3.UnitY * 2.0f * (float)e.Time;
+
         if (KeyboardState.IsKeyDown(Keys.Y))
             _pointLights[0].Position -= Vector3.UnitY * 2.0f * (float)e.Time;
-        
+
         if (KeyboardState.IsKeyDown(Keys.U))
-            _pointLights[0].Position += Vector3.UnitX * 2.0f * (float)e.Time;        
-        
+            _pointLights[0].Position += Vector3.UnitX * 2.0f * (float)e.Time;
+
         if (KeyboardState.IsKeyDown(Keys.J))
             _pointLights[0].Position -= Vector3.UnitX * 2.0f * (float)e.Time;
-        
+
         if (KeyboardState.IsKeyDown(Keys.K))
             _pointLights[0].Position += Vector3.UnitZ * 2.0f * (float)e.Time;
 
         if (KeyboardState.IsKeyDown(Keys.H))
-            _pointLights[0].Position -= Vector3.UnitZ * 2.0f * (float)e.Time;        
-        
+            _pointLights[0].Position -= Vector3.UnitZ * 2.0f * (float)e.Time;
     }
 
     protected override void OnRenderFrame(FrameEventArgs e)
@@ -263,25 +249,18 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
 
         SwapBuffers();
     }
-    
+
     private DateTime _lastCheckTime = DateTime.Now;
-    
+
     private void CheckHotReloadShader()
     {
         DateTime fragmentLastWriteTime = File.GetLastWriteTime("Assets/Shaders/pbr.frag");
 
         if (fragmentLastWriteTime <= _lastCheckTime) return;
-        _pbrShader!.Dispose();
-        _pbrShader = new Shader("Assets/Shaders/pbr.vert", "Assets/Shaders/pbr.frag");
+        Console.WriteLine("rebuild");
+        _pbrShader!.Rebuild();
         _pbrShader.Use();
         _pbrShader.SetVector3("lightDirection", _lightDirection);
-        _pbrShader.SetInt("albedoMap", 0);
-        _pbrShader.SetInt("ambientOcclusionMap", 1);
-        _pbrShader.SetInt("metallicMap", 2);
-        _pbrShader.SetInt("roughnessMap", 3);
-        _pbrShader.SetInt("normalMap", 4);
-        _pbrShader.SetInt("shadowMap", 5);
-        _pbrShader.SetInt("irradianceMap", 6);
         _lastCheckTime = DateTime.Now;
     }
 
@@ -319,7 +298,7 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
             _pbrShader.SetVector3($"pointLights[{i}]", _pointLights[i].Position);
             _pbrShader.SetVector3($"pointLightsColor[{i}]", _pointLights[i].Color);
         }
-        
+
         _stackedStoneAlbedoMap!.Bind();
         _pbrShader.SetVector3("albedoColor", new Vector3(0.0f, 0.0f, 0.0f));
         _stackedStoneAmbientOcclusionMap!.Bind(1);
@@ -341,7 +320,7 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
         _cube!.Draw(Vector3.One, new Vector3(0.0f, 0.0f, 0.0f), 0.5f, (float)_stopwatch.Elapsed.TotalSeconds);
         _cube.Draw(new Vector3(5.0f, 0.5f, 0.5f), new Vector3(0.0f, 1.0f, 0.0f), 0.5f);
         _cube.Draw(new Vector3(0.0f, 2.0f, 0.5f), new Vector3(0.0f, 0.0f, 1.0f), 0.5f);
-        
+
         _pbrShader.SetVector3("albedoColor", new Vector3(1.0f, 1.0f, 1.0f));
         _cube.Draw(_pointLights[0].Position, 0.15f);
     }

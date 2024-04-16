@@ -7,9 +7,25 @@ public class Shader : IDisposable
 {
     private bool _disposed;
 
-    private readonly int _handle;
+    private int _handle;
+
+    private string _vertexPath;
+    private string _fragmentPath;
 
     public Shader(string vertexPath, string fragmentPath)
+    {
+        _vertexPath = vertexPath;
+        _fragmentPath = fragmentPath;
+        Init(vertexPath, fragmentPath);
+    }
+    
+    ~Shader()
+    {
+        if (_disposed) return;
+        Console.WriteLine("GPU Resources Leak! Did you forget to call Dispose()?");
+    }
+
+    private void Init(string vertexPath, string fragmentPath)
     {
         string shaderSource = File.ReadAllText(vertexPath);
         int vertexShader = GL.CreateShader(ShaderType.VertexShader);
@@ -31,32 +47,16 @@ public class Shader : IDisposable
         GL.DeleteShader(vertexShader);
         GL.DeleteShader(fragmentShader);
     }
-
-    public Shader(string computePath)
-    {
-        string shaderSource = File.ReadAllText(computePath);
-        int computeShader = GL.CreateShader(ShaderType.ComputeShader);
-        GL.ShaderSource(computeShader, shaderSource);
-        GL.CompileShader(computeShader);
-
-        _handle = GL.CreateProgram();
-        GL.AttachShader(_handle, computeShader);
-        GL.LinkProgram(_handle);
-
-        GL.DetachShader(_handle, computeShader);
-        GL.DeleteShader(computeShader);
-    }
-
-
-    ~Shader()
-    {
-        if (_disposed) return;
-        Console.WriteLine("GPU Resources Leak! Did you forget to call Dispose()?");
-    }
-
+    
     public void Use()
     {
         GL.UseProgram(_handle);
+    }
+
+    public void Rebuild()
+    {
+        GL.DeleteProgram(_handle);
+        Init(_vertexPath, _fragmentPath);
     }
 
     protected virtual void Dispose(bool disposing)
