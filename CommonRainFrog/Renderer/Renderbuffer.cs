@@ -6,15 +6,15 @@ public class Renderbuffer
 {
     public readonly int Id = GL.GenRenderbuffer();
 
-    public Renderbuffer(int width, int height)
+    public Renderbuffer(int width, int height, RenderbufferStorage renderbufferStorage, FramebufferAttachment framebufferAttachment)
     {
         GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, Id);
 
-        GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, RenderbufferStorage.Depth24Stencil8, width,
+        GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, renderbufferStorage, width,
             height);
 
         GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, Id);
-        GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment,
+        GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, framebufferAttachment,
             RenderbufferTarget.Renderbuffer, Id);
 
         GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, 0);

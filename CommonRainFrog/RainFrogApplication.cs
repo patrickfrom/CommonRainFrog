@@ -26,6 +26,9 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
 
     private Shader? _quadShader;
     private Shader? _pbrShader;
+    private Shader? _equirectangularToCubemapShader;
+    private Shader? _irradianceShader;
+    private Shader? _backgroundShader;
     private Shader? _skyboxShader;
 
     private Quad? _quad;
@@ -92,6 +95,9 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
         _pbrShader.SetInt("roughnessMap", 3);
         _pbrShader.SetInt("normalMap", 4);
         _pbrShader.SetInt("shadowMap", 5);
+        _pbrShader.SetInt("irradianceMap", 6);
+
+        SetupImageBasedLighting();
 
         _quad = new Quad(_quadShader);
         _plane = new Plane(_pbrShader);
@@ -115,9 +121,31 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
         _texturedAluminumNormalMap = new Texture2D("Assets/Textures/TexturedAluminum/Normal.png");
 
         _postprocessFramebuffer = new Framebuffer(ClientSize.X, ClientSize.Y);
-        _postprocessRenderbuffer = new Renderbuffer(ClientSize.X, ClientSize.Y);
+        _postprocessFramebuffer.SetFramebufferTexture2D(FramebufferAttachment.ColorAttachment0);
+        _postprocessFramebuffer.SetMinMagFilter(TextureMinFilter.Linear, TextureMagFilter.Linear);
+        _postprocessFramebuffer.SetTextureImage2D(PixelInternalFormat.Rgb, PixelFormat.Rgb, PixelType.UnsignedInt);
+
+        _postprocessRenderbuffer = new Renderbuffer(ClientSize.X, ClientSize.Y,
+            RenderbufferStorage.Depth24Stencil8, FramebufferAttachment.DepthStencilAttachment);
 
         SetupUniformBufferObject();
+    }
+
+    private void SetupImageBasedLighting()
+    {
+        _equirectangularToCubemapShader = new Shader("Assets/Shaders/IBL/cubemap.vert",
+            "Assets/Shaders/IBL/equirectangularToCubemap.frag");
+        _equirectangularToCubemapShader.Use();
+        _equirectangularToCubemapShader.SetInt("equirectangularMap", 0);
+
+        _irradianceShader =
+            new Shader("Assets/Shaders/IBL/cubemap.vert", "Assets/Shaders/IBL/irradianceConvolution.frag");
+        _irradianceShader.Use();
+        _irradianceShader.SetInt("environmentMap", 0);
+
+        _backgroundShader = new Shader("Assets/Shaders/IBL/background.vert", "Assets/Shaders/IBL/background.frag");
+        _backgroundShader.Use();
+        _backgroundShader.SetInt("environmentMap", 0);
     }
 
     protected override void OnUnload()
