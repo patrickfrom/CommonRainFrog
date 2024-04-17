@@ -23,6 +23,9 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
     private double _timeElapsed;
     private int _frameCount;
 
+    private ImGuiController _imGuiController;
+    private Profiler _profiler = new();
+    
     private Camera? _camera;
 
     private Shader? _quadShader;
@@ -82,6 +85,7 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
 
         GlDebugger.Init();
 
+        _imGuiController = new ImGuiController(ClientSize.X, ClientSize.Y);
         GL.Enable(EnableCap.DepthTest);
         GL.Enable(EnableCap.Multisample);
 
@@ -145,6 +149,8 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
 
     protected override void OnUnload()
     {
+        _imGuiController.Dispose();
+        
         GL.DeleteBuffer(_uboMatrices);
 
         _postprocessFramebuffer.Dispose();
@@ -222,13 +228,8 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
     {
         if (ClientSize == Vector2i.Zero)
             return;
-
-        CheckHotReloadShader();
-
-        DisplayFps(e.Time);
-
+        
         FillUniformBufferObject();
-
 
         _postprocessFramebuffer.Bind();
         GL.Enable(EnableCap.DepthTest);
@@ -247,21 +248,20 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
         GL.BindTexture(TextureTarget.Texture2D, _postprocessFramebuffer.TextureId);
         _quad!.Draw();
 
+        RenderImGui(e.Time);
+
         SwapBuffers();
     }
 
-    private DateTime _lastCheckTime = DateTime.Now;
 
-    private void CheckHotReloadShader()
+
+    private void RenderImGui(double time)
     {
-        DateTime fragmentLastWriteTime = File.GetLastWriteTime("Assets/Shaders/pbr.frag");
-
-        if (fragmentLastWriteTime <= _lastCheckTime) return;
-        Console.WriteLine("rebuild");
-        _pbrShader!.Rebuild();
-        _pbrShader.Use();
-        _pbrShader.SetVector3("lightDirection", _lightDirection);
-        _lastCheckTime = DateTime.Now;
+        _imGuiController.Update(this, (float)time);
+        
+        _profiler.Render();
+        
+        _imGuiController.Render();
     }
 
     protected override void OnResize(ResizeEventArgs e)
@@ -270,6 +270,18 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
         _postprocessRenderbuffer.Resize(ClientSize.X, ClientSize.Y);
 
         GL.Viewport(0, 0, ClientSize.X, ClientSize.Y);
+        
+        _imGuiController.WindowResized(ClientSize.X, ClientSize.Y);
+    }
+
+    protected override void OnTextInput(TextInputEventArgs e)
+    {
+        _imGuiController.PressChar((char)e.Unicode);
+    }
+
+    protected override void OnMouseWheel(MouseWheelEventArgs e)
+    {
+        _imGuiController.MouseScroll(e.Offset);
     }
 
     private void Render2DScene()
@@ -323,17 +335,6 @@ public class RainFrogApplication(int width, int height, string title) : GameWind
 
         _pbrShader.SetVector3("albedoColor", new Vector3(1.0f, 1.0f, 1.0f));
         _cube.Draw(_pointLights[0].Position, 0.15f);
-    }
-
-    private void DisplayFps(double time)
-    {
-        _timeElapsed += time;
-        _frameCount++;
-
-        if (!(_timeElapsed > 0.2f)) return;
-        Title = $"FPS {(_frameCount / _timeElapsed):0.000}";
-        _frameCount = 0;
-        _timeElapsed = 0;
     }
 
     private void SetupUniformBufferObject()
